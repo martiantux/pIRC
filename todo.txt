@@ -1,0 +1,19 @@
+TODO List for pIRC code
+   
+   --
+   
+For after version 1.0.0 (MAYBE):
+   
+1. Multiserver support. I will merge $host and $port, which will then be
+   used like $server = 'irc.network1.org:9001,irc.network2.org:9002'
+   in addition, I will expand all easysend subs to have a first argument
+   for which network to send to, and also each sub for incoming data in
+   the bot module will have a $network variable for which network it came
+   from. A 'network' will be named as the middle of the domain, irc.blah.org
+   would be known as $network = 'blah'.
+   
+2. Multithreading support. This would mean that all of the events that call
+   subs in the bot module would be forked to a new thread, this way anything
+   your bot module does isn't done in a queue sort of way (do this, then that,
+   etc) but each task is done in a new thread, simultanously.
+   

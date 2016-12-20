@@ -1,0 +1,329 @@
+-----------------------------INTRODUCTION-----------------------------
+
+
+pIRC is a bot framework that I decided to build in the hopes that
+it would make creating IRC bots easier for users who are just
+learning scripting/programming. This, however, does not limit the
+use of pIRC to "newbies" in fact I will be using it myself for my
+other project "Shoutbot" because it will offer more than irssi
+does in terms of access to a list of users and their modes, etc.
+
+To create a bot using pIRC all you need to do is edit bot/pIRCbot.pm
+and add your code, below you will find documentation on how things
+are passed to the bot module, and how you can send data in response.
+Once you have written your code, or just some of it and wish to test
+it out, just run ./pirc (or ./pirc -D if you want to run it as a daemon)
+and pIRC will handle everything for you, from connecting to the server
+to processing the incoming data and passing it to your module in an
+easier to use form.
+
+
+------------------------------SCRIPT HEAD-----------------------------
+
+
+Just to make things easier to understand, I'm going to call the first
+20 or so lines of the script our "script head". This consists of our
+dependencies, which are things that (as implied) we NEED. These should
+not be changed unless you are adding your own dependency (DBI for db
+access for example) or, you are sure you know what you are doing. Next
+we have our server variables, this is where we put our information for
+the bot, such as what server we want to connect to, and our nickname.
+In order, $host is for the server we wish to connect to, $port is the
+port we should try to connect on, $usessl is whether or not to try to
+connect to the server using SSL, $reconn is if it should try reconnect
+in the event of a disconnection, $nickname is the nickname we want for
+we want, $nickpass is given to the server with the PASS command when
+connecting, MOST IRC networks will pass this to NickServ to identfy
+your nick, however if it doesn't you will have to use GotNotice to check
+for NickServ asking you to identify. Leave this blank if your nick isn't
+registered. $username is the username for the bot, $usermode is our
+usermode string to send once connected. If you don't know what this is
+you should leave it how it is. $autojoin is a channel the bot will join
+automatically as soon as the server is connected, if you don't want to
+join any channel automatically, just leave this blank.
+
+
+----------------------------RECEIVING DATA----------------------------
+
+
+Receiving data has been made very easy to understand. pIRC will handle
+and process the data, and strip/chop up important data and then pass
+it to the bot module in easy to use variables. It will also pass things
+to the bot module in different subroutines based on what each packet of
+data (and IRC command) is for. Below is a list of currently supported
+subroutines and their available variables, to use any of these, simply
+add them to your bot module, if you don't need one of the ones in the
+example module simply delete it, pIRC will check if you have them or
+not and removing them will not cause errors.
+
+Example sub:
+
+sub GotInvite
+{
+    my ($nick, $address, $channel)
+    # here we have the nick of the person
+    # inviting us, the address (username@hostname)
+    # of the person inviting us, and the channel
+    # we are being inviting to.
+}
+
+Supported event subs & their variables:
+    - GotInvite()
+        - $nick     = the nickname of the person inviting you
+        - $address  = the address of the person inviting you
+        - $channel  = the channel you're being invited to
+        
+    - GotJoin()
+        - $nick     = the nickname of the person that joined
+        - $address  = the address of the person that joined
+        - $channel  = the channel the join happened in
+        
+    - GotPart()
+        - $nick     = the nickname of the person that parted the channel
+        - $address  = the address of the person that parted the channel
+        - $channel  = the channel the part happened in
+        - $reason   = the reason the person parted (if one was given)
+    
+    - GotChannelMessage()
+        - $nick     = the nickname of the person that sent the message
+        - $address  = the address of the person that sent the message
+        - $channel  = the channel the message was received in to
+        - $message  = the message received
+        
+    - GotPrivateMessage()
+        - $nick     = the nickname of the person that sent the message
+        - $address  = the address of the person that sent the message
+        - $message  = the message received
+        
+    - GotQuit()
+        - $nick     = the nickname of the person that quit
+        - $address  = the address of the person that quit
+        - $channel  = the channel the quit happened in
+        - $reason   = the reason the person quit (if one was given)
+        
+    - GotKick()
+        - $nick     = the nickname of the person doing the kicking
+        - $address  = the address of the person doing the kicking
+        - $channel  = the channel the kick was in
+        - $kickee   = the nickname of the person who was kicked
+        - $reason   = the reason for the kick (if one was given)
+        
+    - GotNick()
+        - $nick     = the old nickname of the person changing the nicks
+        - $address  = the address of the person doing the nick change
+        - $newnick  = the nickname the person changed to
+        
+    - GotNotice()
+        - $nick     = the nickname of the person sending the notice
+        - $address  = the address of the person sending the notice
+        - $message  = the message the notice contains
+        
+NOTE: Sub names have to be the same as listed, however variable names
+      you can pick yourself as long as they are put in the correct order.
+      For example, for an invite you could use $nick, $addr, $chan
+
+
+-----------------------------SENDING DATA-----------------------------
+
+
+Like receiving data, I have tried to make sending data much easier than
+having to understand the IRC protocol. (although a basic knowledge of it
+is still better) To achieve this, I have written a module for pIRC which
+will give the bot module access to some subs that provide a very simple
+way of sending data to the IRC network. This is optional, you can always
+remove "use modules::easysubs" from the top of the bot module, however
+I would recommend taking advantage of this module as there is no real
+disadvantage to using it. The only disadvantage I found was not being
+able to send a command if pIRC doesn't currently support it, but I fixed
+that by added a sub to send a raw command to the IRC network.
+
+Example sending of a message:
+SendMessage('#somechan', 'This is a message!');
+
+As you can see, you call the sub for the type of command you wish to send
+and then provide it with the arguments it takes, in this case channel to
+send to, and message to send. Below is a list of subs that easysubs
+currently provides and the arguments you need to give to them.
+
+    - SendMessage()
+        - target    = where you want to send the message
+        - message   = the message you want to send
+        - example   = SendMessage('#example', 'hello everyone');
+        
+    - SendAction()
+        - target    = where you want to send the action message
+        - action    = the action you want to send
+        - example   = SendAction('#example', 'pokes john');
+        
+    - SendInvite()
+        - nick      = the nickname of the person you want to invite
+        - channel   = the channel to invite them to
+        - example   = SendInvite('john', '#example');
+        
+    - SendJoin()
+        - channel   = the channel you want to join
+        - example   = SendJoin('#example');
+        
+    - SendPart()
+        - channel   = the channel you want to part from
+        - reason    = the reason you are parting (blank for none)
+        - example   = SendPart('#example', '#example is old now!');
+        
+    - SendKick()
+        - channel   = the channel to kick them from
+        - target    = the person to kick
+        - reason    = the reason for kicking them
+        - example   = SendKick('#newchan', 'barry', 'Go back to #example!');
+        
+    - SendQuit()
+        - reason    = the reason for quitting (blank for none)
+        - example   = SendQuit('newchan is lame anyway, bye!');
+        
+    - SendNick()
+        - nick      = the new nick we want to change to
+        - example   = SendNick('barryisawesome');
+        
+    - SendRaw()
+        - command   = the raw command to send straight to the server
+        - example   = SendRaw('PRIVMSG #newchan :newchan is awesome!');
+        
+NOTE: You must call these subs with the names as listed (including case)
+      the arguments must be given in the order they are listed, you don't
+      want to be inviting #example to join john :]
+      
+      
+------------------------CHANNEL/USER LISTING--------------------------
+      
+      
+One of the parts of pIRC that I really looked forward to completing is
+a way of listing bot the channels pIRC is in, the users in those channels,
+and the channel modes set on the channels, and the users in the respective
+channels. Finally I have gotten around to implementing this, and it works
+well. I have also added a subroutine to easysubs to make it very easy to
+use in your bot, so that there isn't really too much to remember in terms
+of what the array names are and such. Below I will explain how to use the
+lists and give an example of how it could be useful in a bot, but first
+you need to know a few things about IRC and how channel modes work. First,
+you have channel modes for the channel, such as +i (invite only) or +r
+(registered channel with services), these modes will be set for the channel
+in the list, and would be returned as "+ri". Next, we have channel modes
+that are set on users in the channel, such as +o (channel operator) or
++v (voice) and these are set on users in the channels, and are returned
+as symbols, which I'll list later, but for example a channel operator would
+return "@".
+
+Now, the sub for checking these easily is called CheckModes, this will
+return the modes set on a user or channel, but can also be used to check
+if a user or channel exists because if they don't it will return false,
+instead of their mode.
+
+Checking a channels modes (or if it exists)
+    - CheckModes('#somechannel');
+      
+Checking modes set on a user in a channel, or if they are in the channel
+    - CheckModes('#somechan', 'theuser');
+    
+That's it. Yep, with this you can either have a channel or users modes
+returned, or check if you are in a channel, or if a user is in a channel.
+
+Symbols set on modes, and what they mean;
+
+For users:
+    -   This is set (by pIRC) if a user has no modes
+    +   This means a user has +v in the channel, and can speak if +m is set
+    %   This means a user is a halfop
+    @   This means a user is a chanop
+    &   This means a user is a channel admin
+    ~   This means a user owns the channel
+    *   This means a user is a Network Operator
+    
+For channels:
+    +   If ONLY this is returned, it means that channel has NO modes set
+    
+Below is a small example of how this could be used in a bot, the code below
+will check if a message starts with "poke", if it does, it will then check
+for an argument (nick as second word) and then check if they are in the
+channel. If they are, it will use ACTION text to poke them, otherwise it
+won't.
+
+sub GotChannelMessage
+{
+    my ($nick, $address, $channel, $message) = @_;
+
+    if ($message =~ m/^!poke/)        # If the message starts with !poke
+    my @args = split(' ', $message);  # This splits it up by spaces
+    if (! $args[1]) { return; }       # It doesn't have a second word (a nick)
+    if (CheckMode($channel, $args[1]))# If they are in the channel
+    {
+        SendAction($channel, "pokes $args[1]"); # Poke them
+    }
+}
+
+Additionally, there is a NickCount() sub that will return the number
+of people in a given channel. Used like NickCount("#halo");
+    
+    
+-------------------------------LOGGING--------------------------------
+
+
+There is a module available for logging (either outputs to the console
+or ends up in the log file if running as a daemon) which is mostly for
+the main script to keep track of everything, but can be used by the bot
+module. Below is a list of the log entry types that are supported,
+including one for the bot (but this does not HAVE to be used).
+
+Example log message:
+LogMessage('bot', 'Log entry from the bot!');
+
+    - Connection    = used for connection information, this is prefixed
+                      with *** in cyan
+                      
+    - Send          = used for when data is being SENT, this is prefixed
+                      with >>> in blue
+                      
+    - Receive       = used for when data is being received, this is
+                      prefixed with <<< in red
+                      
+    - Bot           = used for anything that a bot developer wants to be
+                      able to easily see in the log, this is prefixed
+                      with ### in magenta
+                      
+    - Other         = used for anything else, this is prefixed with ---
+                      in yellow
+                      
+NOTE: You must give a type, if you don't give a type, the logging module
+      will ignore your LogMessage. Types are not case sensitive.
+      
+      
+-------------------------------RELOAD---------------------------------
+
+
+pIRC has reload support. This means you can make changes to your bot
+module file, and reload them without having to kill pIRC meaning you
+would have to disconnect and reconnect. This is very useful for new
+bots as a lot of changes tend to happen, and disconnecting/reconnecting
+all the time can be very annoying, not only for the developer. Reloads
+can be triggered either by doing ./pIRC -r or ./pIRC --reload if pIRC
+is in daemon mode, or by calling ReloadBot() from the bot module.
+
+ReloadBot() will check if the file exists, check if it is readable and
+then check the syntax. Only if these things are all ok will it then
+reload the module, this will prevent changes causing pIRC to crash.
+ReloadBot() will return the status of the reload, it will return file
+if something is wrong with the file (non-existant, unreadable), success
+if everything is ok and it will tell you where the error was if the
+syntax is bad ("syntax error at ./bot/pIRCbot.pm line 9001, near "derp"
+for example).
+
+
+-------------------------------SUPPORT--------------------------------
+
+
+This document should cover almost everything for using pIRC other than
+things like "how to code in Perl". That said, if you have any questions
+regarding the bot module, or even pIRC itself, or you would like to
+recommend/suggest things to add or change, feel free to email me at
+bradicaljh@hotmail.com with subject 'pIRC'.
+
+
+----------------------------------------------------------------------

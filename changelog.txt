@@ -1,0 +1,34 @@
+v1.0.1
+
+    - Added automatic rejoining for channels we were in, after being
+      disconnected. Added code to not reconnect after an Oper kills pIRC
+
+v1.0.2
+
+    - Fixed a bug with losing our channels/nicks/modes listing if we reload
+      the bot (it was getting cleared)
+
+v1.0.3
+
+    - Removed pings/pongs from non-quiet logging, too much log spam. Also
+      added a changelog file.
+      
+v1.0.4
+
+    - ACTUALLY fixed the bug from 1.0.2 (the fix was flawed)
+
+v1.0.5
+
+    - Added support to user/mode listing for the oper symbol (*)
+    
+v1.0.6 [04-05-2012]
+
+    - Fixed a bug in the ./pirc.pl -r reload method causing crashes
+    - Added support for telling you where the syntax error is, when reloading
+    
+v1.0.7 [05-05-2012]
+
+    - Added NickCount() for counting the nicks in a given channel
+    - Fixed a bug with GotPart() passing
+    - Fixed a bug in easysubs that prevented you from using SendPart without a reason
+    
